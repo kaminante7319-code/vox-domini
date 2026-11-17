@@ -3,294 +3,495 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#172d49">
-<title>Vox Domini | Cantoral Litúrgico</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vox Domini</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f5f6f8;
-  color: #263449;
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#f3f5f8;
+color:#263447;
 }
-header {
-  background: #172d49;
-  color: white;
-  text-align: center;
-  padding: 30px 15px;
+header{
+background:#102b50;
+color:white;
+text-align:center;
+padding:25px 12px;
+border-bottom:4px solid #d6ad55;
 }
-.logo { font-size: 38px; color: #e5c77a; }
-header h1 { letter-spacing: 4px; margin: 5px; }
-header p { color: #e5c77a; }
-main { max-width: 950px; margin: auto; padding: 20px 15px; }
-h2 { color: #172d49; text-align: center; }
-.search {
-  width: 100%;
-  padding: 15px;
-  border: 1px solid #d5dce5;
-  border-radius: 12px;
-  font-size: 16px;
-  margin: 12px 0 20px;
+header h1{margin:0;font-size:30px}
+header p{color:#e5d5a8}
+main{max-width:1000px;margin:auto;padding:15px}
+.panel{
+background:white;
+padding:18px;
+border-radius:12px;
+margin-bottom:16px;
+box-shadow:0 2px 8px #0001;
 }
-.categories {
-  display: grid;
-  grid-template-columns: repeat(2,1fr);
-  gap: 10px;
+h2{color:#102b50}
+input,textarea,select{
+width:100%;
+padding:12px;
+margin:7px 0 13px;
+border:1px solid #ccd3dc;
+border-radius:7px;
+font-size:15px;
 }
-.category {
-  background: white;
-  border: 1px solid #e0e4e9;
-  border-radius: 12px;
-  padding: 16px 10px;
-  text-align: left;
-  cursor: pointer;
-  color: #263449;
+textarea{min-height:150px}
+button{
+padding:11px 16px;
+border:0;
+border-radius:7px;
+background:#102b50;
+color:white;
+margin:4px;
+cursor:pointer;
 }
-.category.active {
-  background: #172d49;
-  color: white;
+.gold{background:#a77b27}
+.red{background:#a83232}
+.category{
+background:#edf1f7;
+color:#102b50;
 }
-#status, #songs { margin-top: 22px; }
-.song {
-  background: white;
-  border-radius: 12px;
-  padding: 18px;
-  margin: 12px 0;
-  border: 1px solid #e0e4e9;
+.category.active{
+background:#102b50;
+color:white;
 }
-.song h3 { color: #172d49; }
-.song pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-family: Arial, sans-serif;
-  line-height: 1.7;
+.song{
+background:white;
+border:1px solid #ddd;
+border-radius:9px;
+padding:15px;
+margin:10px 0;
 }
-.chords {
-  color: #a33b35;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-weight: bold;
+.song h3{color:#102b50}
+.song pre{
+white-space:pre-wrap;
+overflow-wrap:anywhere;
+font-family:Arial;
+font-size:16px;
+line-height:1.7;
 }
-footer {
-  background: #172d49;
-  color: white;
-  text-align: center;
-  padding: 22px;
-  margin-top: 35px;
-}
-@media(min-width:650px) {
-  .categories { grid-template-columns: repeat(3,1fr); }
-}
+.meta{font-size:13px;color:#657386}
+.hidden{display:none}
+footer{text-align:center;padding:25px;color:#657386}
 </style>
 </head>
-
 <body>
+
 <header>
-  <div class="logo">♫</div>
-  <h1>VOX DOMINI</h1>
-  <p>Cantoral Litúrgico</p>
-  <small>La música al servicio de la liturgia</small>
+<h1>♫ VOX DOMINI</h1>
+<p>La voz que eleva el corazón a Dios</p>
 </header>
 
 <main>
-  <h2>Bienvenidos a Vox Domini</h2>
+<section class="panel">
+<h2>Buscar cantos</h2>
+<input id="busqueda" placeholder="Buscar canto, letra o autor...">
+<h3>Categorías</h3>
+<div id="categoryBox">Cargando categorías...</div>
+</section>
 
-  <input id="search" class="search" type="search"
-    placeholder="Buscar categoría o canto...">
+<section class="panel">
+<h2>Repertorio de cantos</h2>
+<div id="songList">Conectando...</div>
+</section>
 
-  <h2>Categorías litúrgicas</h2>
-  <div id="categories" class="categories"></div>
+<section class="panel">
+<h2>Administración</h2>
+<div id="loginBox">
+<p>Acceso exclusivo para administradores.</p>
+<input id="email" type="email" placeholder="Correo electrónico">
+<input id="password" type="password" placeholder="Contraseña">
+<button onclick="login()">Iniciar sesión</button>
+<p id="loginStatus"></p>
+</div>
 
-  <div id="status" aria-live="polite">Conectando con el cantoral...</div>
-  <section id="songs"></section>
+<div id="adminBox" class="hidden">
+<button class="red" onclick="logout()">Cerrar sesión</button>
+<hr>
+<h3 id="formTitle">Agregar canto</h3>
+<input type="hidden" id="songId">
+<label>Título</label>
+<input id="titulo" placeholder="Título del canto">
+<label>Categoría</label>
+<select id="categoria">
+<option value="">Seleccionar categoría</option>
+</select>
+<label>Autor</label>
+<input id="autor" placeholder="Autor">
+<label>Tiempo litúrgico</label>
+<input id="tiempo" placeholder="Ej. Adviento">
+<label>Tono</label>
+<input id="tono" placeholder="Ej. Em, Re, Sol">
+<label>Letra del canto</label>
+<textarea id="letra" placeholder="Escribe la letra aquí..."></textarea>
+<label><input type="checkbox" id="cifrado" style="width:auto"> Contiene cifrado</label>
+<br>
+<label><input type="checkbox" id="publicado" checked style="width:auto"> Publicar canto</label>
+<br><br>
+<button class="gold" onclick="saveSong()">Guardar canto</button>
+<button onclick="clearForm()">Nuevo canto</button>
+<p id="adminStatus"></p>
+</div>
+</section>
 </main>
 
 <footer>
-  <strong>VOX DOMINI</strong>
-  <p>Cantoral Litúrgico Católico</p>
-  <p>© 2026 Vox Domini</p>
+Vox Domini © 2026<br>
+Música al servicio de la liturgia
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-const SUPABASE_URL = "https://ndwfbmmhffhwrlnzhzip.supabase.co";
+const SUPABASE_URL = "https://ndwfbmmhffhwrlnzhzip.supabase.co/rest/v1/";
 const SUPABASE_KEY = "sb_publishable_LoA4FVqzyNvqUo2JkXo63A_xuWomF6k";
-
-const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-
-const categoryBox = document.getElementById("categories");
-const songsBox = document.getElementById("songs");
-const statusBox = document.getElementById("status");
-const searchBox = document.getElementById("search");
-
-let categories = [];
-let songs = [];
-let selectedCategory = null;
-
-function element(tag, text, className) {
-  const el = document.createElement(tag);
-  if (text !== undefined) el.textContent = text;
-  if (className) el.className = className;
-  return el;
-}
-
-function showCategories(list) {
-  categoryBox.replaceChildren();
-
-  list.forEach(cat => {
-    const button = element(
-      "button",
-      "♫ " + cat.nombre,
-      "category"
-    );
-
-    if (selectedCategory &&
-        String(selectedCategory.id) === String(cat.id)) {
-      button.classList.add("active");
-    }
-
-    button.onclick = () => {
-      selectedCategory = cat;
-      showCategories(filterCategories());
-      showSongs();
-    };
-
-    categoryBox.appendChild(button);
-  });
-}
-
-function showSongs() {
-  songsBox.replaceChildren();
-
-  if (!selectedCategory) {
-    statusBox.textContent = "Selecciona una categoría para consultar sus cantos.";
-    return;
-  }
-
-  const found = songs.filter(song =>
-    String(song.categoria) === String(selectedCategory.id) &&
-    (song.publicado === true || song.publicado === "true")
-  );
-
-  statusBox.textContent =
-    selectedCategory.categoria + " · " + found.length + " cantos";
-
-  if (!found.length) {
-    songsBox.appendChild(element(
-      "p",
-      "Todavía no hay cantos publicados en esta categoría."
-    ));
-    return;
-  }
-
-  found.forEach(song => {
-    const card = element("article", undefined, "song");
-    card.appendChild(element("h3", song.titulo || "Sin título"));
-
-    if (song.autor) {
-      card.appendChild(element("p", "Autor: " + song.autor));
-    }
-    if (song.tiempo_liturgico) {
-      card.appendChild(element("p", "Tiempo litúrgico: " + song.tiempo_liturgico));
-    }
-    if (song.tono) {
-      card.appendChild(element("p", "Tono: " + song.tono));
-    }
-    if (song.letra) {
-      card.appendChild(element("pre", song.letra));
-    }
-    if (song.cifrado) {
-      card.appendChild(element("div", song.cifrado, "chords"));
-    }
-
-    songsBox.appendChild(card);
-  });
-}
-
-function filterCategories() {
-  const value = searchBox.value.trim().toLowerCase();
-
-  const filtered = categories.filter(cat =>
-    String(cat.categoria).toLowerCase().includes(value)
-  );
-
-  showCategories(filtered);
-
-  if (value) {
-    const matchingSongs = songs.filter(song =>
-      (song.publicado === true || song.publicado === "true") &&
-      (String(song.titulo || "").toLowerCase().includes(value) ||
-       String(song.autor || "").toLowerCase().includes(value))
-    );
-
-    if (matchingSongs.length) {
-      statusBox.textContent = "Cantos encontrados: " + matchingSongs.length;
-      songsBox.replaceChildren();
-
-      matchingSongs.forEach(song => {
-        const card = element("article", undefined, "song");
-        card.appendChild(element("h3", song.titulo || "Sin título"));
-        if (song.autor) card.appendChild(element("p", "Autor: " + song.autor));
-        if (song.letra) card.appendChild(element("pre", song.letra));
-        if (song.cifrado) card.appendChild(element("div", song.cifrado, "chords"));
-        songsBox.appendChild(card);
-      });
-      return;
-    }
-  }
-
-  showSongs();
-}
-
-async function loadData() {
-  try {
-    statusBox.textContent = "Cargando categorías y cantos...";
-
-    const [catResult, songResult] = await Promise.all([
-      db.from("Categorias").select("id,nombre").order("id"),
-      db.from("cantos")
-        .select("id,titulo,letra,categoria,autor,tiempo_liturgico,tono,cifrado,publicado")
-        .order("id")
-    ]);
-
-    if (catResult.error) throw catResult.error;
-    if (songResult.error) throw songResult.error;
-
-    categories = catResult.data || [];
-    songs = songResult.data || [];
-
-    showCategories(categories);
-    statusBox.textContent =
-      "Conectado correctamente. " + categories.length +
-      " categorías disponibles.";
-
-  } catch (error) {
-  console.error("Error Supabase:", error);
-  statusBox.textContent =
-    "ERROR: " + error.message +
-    " | Código: " + (error.code || "sin código");
-  }
-}
-
-searchBox.addEventListener("input", filterCategories);
-
-loadData();
-</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 
 const supabase = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
 
-console.log("Vox Domini: conexión Supabase inicializada");
+let categories = [];
+let songs = [];
+let selectedCategory = "";
+
+document.addEventListener("DOMContentLoaded", async () => {
+  document.getElementById("busqueda")
+    .addEventListener("input", renderSongs);
+
+  await loadCategories();
+  await loadSongs();
+  await checkSession();
+});
+
+async function loadCategories() {
+  const box = document.getElementById("categoryBox");
+
+  const {data, error} = await supabase
+    .from("Categorias")
+    .select("id,nombre")
+    .order("nombre");
+
+  if(error) {
+    box.textContent = "Error: " + error.message;
+    return;
+  }
+
+  categories = data || [];
+
+  const select = document.getElementById("categoria");
+  select.innerHTML =
+    '<option value="">Seleccionar categoría</option>';
+
+  categories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat.nombre;
+    option.textContent = cat.nombre;
+    select.appendChild(option);
+  });
+
+  box.replaceChildren();
+
+  const all = document.createElement("button");
+  all.textContent = "Todos los cantos";
+  all.className = "category active";
+  all.onclick = () => {
+    selectedCategory = "";
+    updateCategories();
+    renderSongs();
+  };
+  box.appendChild(all);
+
+  categories.forEach(cat => {
+    const button = document.createElement("button");
+    button.textContent = "♫ " + cat.nombre;
+    button.className = "category";
+    button.dataset.category = cat.nombre;
+    button.onclick = () => {
+      selectedCategory = cat.nombre;
+      updateCategories();
+      renderSongs();
+    };
+    box.appendChild(button);
+  });
+}
+
+function updateCategories() {
+  document.querySelectorAll(".category").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.category === selectedCategory ||
+      (!selectedCategory && !button.dataset.category)
+    );
+  });
+}
+
+async function loadSongs() {
+  const box = document.getElementById("songList");
+
+  const {data, error} = await supabase
+    .from("cantos")
+    .select("id,titulo,letra,categoria,autor,tiempo_liturgico,tono,created,cifrado,publicado")
+    .eq("publicado", true)
+    .order("titulo");
+
+  if(error) {
+    box.textContent = "Error: " + error.message;
+    return;
+  }
+
+  songs = data || [];
+  renderSongs();
+}
+
+function renderSongs() {
+  const box = document.getElementById("songList");
+  const search = document.getElementById("busqueda")
+    .value.toLowerCase().trim();
+
+  box.replaceChildren();
+
+  const filtered = songs.filter(song => {
+    return (!selectedCategory ||
+      song.categoria === selectedCategory) &&
+      (
+        (song.titulo || "").toLowerCase().includes(search) ||
+        (song.letra || "").toLowerCase().includes(search) ||
+        (song.autor || "").toLowerCase().includes(search)
+      );
+  });
+
+  if(!filtered.length) {
+    box.textContent = "No se encontraron cantos.";
+    return;
+  }
+
+  filtered.forEach(song => {
+    const card = document.createElement("article");
+    card.className = "song";
+
+    const title = document.createElement("h3");
+    title.textContent = song.titulo || "Sin título";
+    card.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = [
+      song.categoria,
+      song.autor ? "Autor: " + song.autor : "",
+      song.tono ? "Tono: " + song.tono : "",
+      song.tiempo_liturgico || ""
+    ].filter(Boolean).join(" | ");
+    card.appendChild(meta);
+
+    const lyrics = document.createElement("pre");
+    lyrics.textContent = song.letra || "";
+    card.appendChild(lyrics);
+
+    if(song.cifrado) {
+      const tag = document.createElement("p");
+      tag.textContent = "♫ Contiene cifrado";
+      card.appendChild(tag);
+    }
+
+    if(!document.getElementById("adminBox")
+      .classList.contains("hidden")) {
+      const edit = document.createElement("button");
+      edit.textContent = "Editar";
+      edit.onclick = () => editSong(song.id);
+
+      const del = document.createElement("button");
+      del.textContent = "Eliminar";
+      del.className = "red";
+      del.onclick = () => deleteSong(song.id);
+
+      card.append(edit, del);
+    }
+
+    box.appendChild(card);
+  });
+}
+</script>
+
+<script>
+
+// AUTENTICACIÓN
+async function checkSession() {
+  const {data} = await supabase.auth.getSession();
+  updateAuth(data.session);
+}
+
+function updateAuth(session) {
+  document.getElementById("loginBox")
+    .classList.toggle("hidden", !!session);
+
+  document.getElementById("adminBox")
+    .classList.toggle("hidden", !session);
+
+  renderSongs();
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+  updateAuth(session);
+});
+
+// INICIAR SESIÓN
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  const status = document.getElementById("loginStatus");
+
+  const {data, error} = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if(error) {
+    status.textContent = error.message;
+    status.className = "error";
+    return;
+  }
+
+  updateAuth(data.session);
+  status.textContent = "Sesión iniciada correctamente.";
+}
+
+// CERRAR SESIÓN
+async function logout() {
+  const {error} = await supabase.auth.signOut();
+
+  if(error) {
+    alert(error.message);
+    return;
+  }
+
+  clearForm();
+  updateAuth(null);
+}
+
+// GUARDAR CANTO
+async function saveSong() {
+  const status = document.getElementById("adminStatus");
+
+  const {data: sessionData} = await supabase.auth.getSession();
+
+  if(!sessionData.session) {
+    status.textContent = "Debes iniciar sesión.";
+    return;
+  }
+
+  const titulo = document.getElementById("titulo").value.trim();
+  const letra = document.getElementById("letra").value.trim();
+  const categoria = document.getElementById("categoria").value;
+
+  if(!titulo || !letra || !categoria) {
+    status.textContent = "Completa título, letra y categoría.";
+    return;
+  }
+
+  const song = {
+    titulo: titulo,
+    letra: letra,
+    categoria: categoria,
+    autor: document.getElementById("autor").value.trim(),
+    tiempo_liturgico: document.getElementById("tiempo").value.trim(),
+    tono: document.getElementById("tono").value.trim(),
+    cifrado: document.getElementById("cifrado").checked,
+    publicado: document.getElementById("publicado").checked
+  };
+
+  const id = document.getElementById("songId").value;
+
+  let result;
+
+  if(id) {
+    result = await supabase
+      .from("cantos")
+      .update(song)
+      .eq("id", id);
+  } else {
+    result = await supabase
+      .from("cantos")
+      .insert(song);
+  }
+
+  if(result.error) {
+    status.textContent = "Error: " + result.error.message;
+    status.className = "error";
+    return;
+  }
+
+  status.textContent = "Canto guardado correctamente.";
+
+  clearForm();
+  await loadSongs();
+}
+
+// EDITAR CANTO
+function editSong(id) {
+  const song = songs.find(item => String(item.id) === String(id));
+
+  if(!song) return;
+
+  document.getElementById("songId").value = song.id;
+  document.getElementById("titulo").value = song.titulo || "";
+  document.getElementById("categoria").value = song.categoria || "";
+  document.getElementById("autor").value = song.autor || "";
+  document.getElementById("tiempo").value = song.tiempo_liturgico || "";
+  document.getElementById("tono").value = song.tono || "";
+  document.getElementById("letra").value = song.letra || "";
+  document.getElementById("cifrado").checked = !!song.cifrado;
+  document.getElementById("publicado").checked = !!song.publicado;
+
+  document.getElementById("formTitle").textContent = "Editar canto";
+
+  document.getElementById("adminBox").scrollIntoView({
+    behavior: "smooth"
+  });
+}
+
+// ELIMINAR CANTO
+async function deleteSong(id) {
+  if(!confirm("¿Deseas eliminar este canto permanentemente?")) {
+    return;
+  }
+
+  const {error} = await supabase
+    .from("cantos")
+    .delete()
+    .eq("id", id);
+
+  if(error) {
+    alert("Error: " + error.message);
+    return;
+  }
+
+  clearForm();
+  await loadSongs();
+  alert("Canto eliminado.");
+}
+
+// LIMPIAR FORMULARIO
+function clearForm() {
+  document.getElementById("songId").value = "";
+  document.getElementById("titulo").value = "";
+  document.getElementById("categoria").value = "";
+  document.getElementById("autor").value = "";
+  document.getElementById("tiempo").value = "";
+  document.getElementById("tono").value = "";
+  document.getElementById("letra").value = "";
+  document.getElementById("cifrado").checked = false;
+  document.getElementById("publicado").checked = true;
+
+  document.getElementById("formTitle").textContent = "Agregar canto";
+  document.getElementById("adminStatus").textContent = "";
+}
+
+</script>
 </script>
 </body>
 </html>
