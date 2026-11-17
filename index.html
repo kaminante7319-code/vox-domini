@@ -246,7 +246,7 @@ async function loadSongs() {
   let query = db
     .from("cantos")
     .select("*")
-    .eq("publicado", true)
+    
     .order("titulo");
 
   // RELACIÓN CORRECTA CON CATEGORÍAS
