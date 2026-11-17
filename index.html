@@ -255,7 +255,7 @@ async function loadSongs() {
   );
 
   let query = db
-    .from("Cantos")
+    .from("cantos")
     .select("*")
     .eq("publicado", true)
     .order("titulo");
