@@ -271,9 +271,10 @@ async function loadData() {
       " categorías disponibles.";
 
   } catch (error) {
-    console.error(error);
-    statusBox.textContent =
-      "No se pudo conectar. Revisa la URL, la clave y los permisos de lectura de Supabase.";
+  console.error("Error Supabase:", error);
+  statusBox.textContent =
+    "ERROR: " + error.message +
+    " | Código: " + (error.code || "sin código");
   }
 }
 
