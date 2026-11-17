@@ -3,123 +3,90 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#172d49">
 <title>Vox Domini | Cantoral Litúrgico</title>
 
 <style>
 * { box-sizing: border-box; }
-
 body {
   margin: 0;
   font-family: Arial, sans-serif;
   background: #f5f6f8;
   color: #263449;
 }
-
 header {
   background: #172d49;
   color: white;
   text-align: center;
-  padding: 35px 15px;
+  padding: 30px 15px;
 }
-
-.logo {
-  font-size: 38px;
-  color: #e5c77a;
-  margin-bottom: 8px;
-}
-
-header h1 {
-  margin: 0;
-  letter-spacing: 4px;
-  font-size: 29px;
-}
-
-header p {
-  color: #e5c77a;
-  margin-bottom: 0;
-}
-
-main {
-  max-width: 950px;
-  margin: auto;
-  padding: 25px 16px;
-}
-
-h2 {
-  color: #172d49;
-  text-align: center;
-}
-
+.logo { font-size: 38px; color: #e5c77a; }
+header h1 { letter-spacing: 4px; margin: 5px; }
+header p { color: #e5c77a; }
+main { max-width: 950px; margin: auto; padding: 20px 15px; }
+h2 { color: #172d49; text-align: center; }
 .search {
   width: 100%;
   padding: 15px;
   border: 1px solid #d5dce5;
   border-radius: 12px;
   font-size: 16px;
-  margin: 15px 0 25px;
+  margin: 12px 0 20px;
 }
-
 .categories {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(2,1fr);
+  gap: 10px;
 }
-
 .category {
   background: white;
   border: 1px solid #e0e4e9;
   border-radius: 12px;
-  padding: 18px 12px;
+  padding: 16px 10px;
   text-align: left;
   cursor: pointer;
   color: #263449;
-  font-size: 14px;
-  min-height: 65px;
-  transition: .2s;
 }
-
-.category:hover,
 .category.active {
   background: #172d49;
   color: white;
-  border-color: #172d49;
 }
-
-.category span {
-  color: #b18a43;
-  margin-right: 7px;
-}
-
-#message {
+#status, #songs { margin-top: 22px; }
+.song {
   background: white;
   border-radius: 12px;
-  padding: 22px;
-  margin-top: 25px;
-  text-align: center;
-  display: none;
+  padding: 18px;
+  margin: 12px 0;
+  border: 1px solid #e0e4e9;
 }
-
+.song h3 { color: #172d49; }
+.song pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: Arial, sans-serif;
+  line-height: 1.7;
+}
+.chords {
+  color: #a33b35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-weight: bold;
+}
 footer {
   background: #172d49;
   color: white;
   text-align: center;
-  padding: 25px;
+  padding: 22px;
   margin-top: 35px;
-  font-size: 13px;
 }
-
-@media (min-width: 650px) {
-  .categories {
-    grid-template-columns: repeat(3, 1fr);
-  }
+@media(min-width:650px) {
+  .categories { grid-template-columns: repeat(3,1fr); }
 }
 </style>
 </head>
 
 <body>
-
 <header>
   <div class="logo">♫</div>
   <h1>VOX DOMINI</h1>
@@ -128,27 +95,16 @@ footer {
 </header>
 
 <main>
-
   <h2>Bienvenidos a Vox Domini</h2>
 
-  <input
-    class="search"
-    type="search"
-    id="search"
-    placeholder="Buscar una categoría litúrgica..."
-    oninput="filterCategories()"
-  >
+  <input id="search" class="search" type="search"
+    placeholder="Buscar categoría o canto...">
 
   <h2>Categorías litúrgicas</h2>
+  <div id="categories" class="categories"></div>
 
-  <div class="categories" id="categories"></div>
-
-  <div id="message">
-    <h3 id="selected"></h3>
-    <p>Estamos preparando nuestro repertorio musical.</p>
-    <p>Próximamente encontrarás aquí los cantos publicados.</p>
-  </div>
-
+  <div id="status" aria-live="polite">Conectando con el cantoral...</div>
+  <section id="songs"></section>
 </main>
 
 <footer>
@@ -157,62 +113,173 @@ footer {
   <p>© 2026 Vox Domini</p>
 </footer>
 
-<script>
-const categories = [
-  "Entrada",
-  "Señor, ten piedad",
-  "Gloria",
-  "Salmo responsorial",
-  "Aleluya",
-  "Ofertorio",
-  "Santo",
-  "Aclamación después de la consagración",
-  "Amén",
-  "Padre nuestro",
-  "Cordero de Dios",
-  "Comunión",
-  "Salida",
-  "Adoración eucarística",
-  "Marianos"
-];
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-const container = document.getElementById("categories");
+<script>
+const SUPABASE_URL = "https://ndwfbmmhffhwrlnzhzip.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_LoA4FVqzyNvqUo2JkXo63A_xuWomF6k";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+const categoryBox = document.getElementById("categories");
+const songsBox = document.getElementById("songs");
+const statusBox = document.getElementById("status");
+const searchBox = document.getElementById("search");
+
+let categories = [];
+let songs = [];
+let selectedCategory = null;
+
+function element(tag, text, className) {
+  const el = document.createElement(tag);
+  if (text !== undefined) el.textContent = text;
+  if (className) el.className = className;
+  return el;
+}
 
 function showCategories(list) {
-  container.innerHTML = "";
+  categoryBox.replaceChildren();
 
-  list.forEach(name => {
-    const button = document.createElement("button");
-    button.className = "category";
-    button.innerHTML = '<span>♫</span>';
-    button.appendChild(document.createTextNode(name));
+  list.forEach(cat => {
+    const button = element(
+      "button",
+      "♫ " + cat.categoria,
+      "category"
+    );
+
+    if (selectedCategory &&
+        String(selectedCategory.id) === String(cat.id)) {
+      button.classList.add("active");
+    }
 
     button.onclick = () => {
-      document.getElementById("selected").textContent = name;
-      document.getElementById("message").style.display = "block";
-      document.querySelectorAll(".category").forEach(b =>
-        b.classList.remove("active")
-      );
-      button.classList.add("active");
+      selectedCategory = cat;
+      showCategories(filterCategories());
+      showSongs();
     };
 
-    container.appendChild(button);
+    categoryBox.appendChild(button);
+  });
+}
+
+function showSongs() {
+  songsBox.replaceChildren();
+
+  if (!selectedCategory) {
+    statusBox.textContent = "Selecciona una categoría para consultar sus cantos.";
+    return;
+  }
+
+  const found = songs.filter(song =>
+    String(song.categoria) === String(selectedCategory.id) &&
+    (song.publicado === true || song.publicado === "true")
+  );
+
+  statusBox.textContent =
+    selectedCategory.categoria + " · " + found.length + " cantos";
+
+  if (!found.length) {
+    songsBox.appendChild(element(
+      "p",
+      "Todavía no hay cantos publicados en esta categoría."
+    ));
+    return;
+  }
+
+  found.forEach(song => {
+    const card = element("article", undefined, "song");
+    card.appendChild(element("h3", song.titulo || "Sin título"));
+
+    if (song.autor) {
+      card.appendChild(element("p", "Autor: " + song.autor));
+    }
+    if (song.tiempo_liturgico) {
+      card.appendChild(element("p", "Tiempo litúrgico: " + song.tiempo_liturgico));
+    }
+    if (song.tono) {
+      card.appendChild(element("p", "Tono: " + song.tono));
+    }
+    if (song.letra) {
+      card.appendChild(element("pre", song.letra));
+    }
+    if (song.cifrado) {
+      card.appendChild(element("div", song.cifrado, "chords"));
+    }
+
+    songsBox.appendChild(card);
   });
 }
 
 function filterCategories() {
-  const value = document.getElementById("search")
-    .value.toLowerCase();
+  const value = searchBox.value.trim().toLowerCase();
 
-  const filtered = categories.filter(name =>
-    name.toLowerCase().includes(value)
+  const filtered = categories.filter(cat =>
+    String(cat.categoria).toLowerCase().includes(value)
   );
 
   showCategories(filtered);
+
+  if (value) {
+    const matchingSongs = songs.filter(song =>
+      (song.publicado === true || song.publicado === "true") &&
+      (String(song.titulo || "").toLowerCase().includes(value) ||
+       String(song.autor || "").toLowerCase().includes(value))
+    );
+
+    if (matchingSongs.length) {
+      statusBox.textContent = "Cantos encontrados: " + matchingSongs.length;
+      songsBox.replaceChildren();
+
+      matchingSongs.forEach(song => {
+        const card = element("article", undefined, "song");
+        card.appendChild(element("h3", song.titulo || "Sin título"));
+        if (song.autor) card.appendChild(element("p", "Autor: " + song.autor));
+        if (song.letra) card.appendChild(element("pre", song.letra));
+        if (song.cifrado) card.appendChild(element("div", song.cifrado, "chords"));
+        songsBox.appendChild(card);
+      });
+      return;
+    }
+  }
+
+  showSongs();
 }
 
-showCategories(categories);
-</script>
+async function loadData() {
+  try {
+    statusBox.textContent = "Cargando categorías y cantos...";
 
+    const [catResult, songResult] = await Promise.all([
+      db.from("Categorias").select("id,categoria").order("id"),
+      db.from("cantos")
+        .select("id,titulo,letra,categoria,autor,tiempo_liturgico,tono,cifrado,publicado")
+        .order("id")
+    ]);
+
+    if (catResult.error) throw catResult.error;
+    if (songResult.error) throw songResult.error;
+
+    categories = catResult.data || [];
+    songs = songResult.data || [];
+
+    showCategories(categories);
+    statusBox.textContent =
+      "Conectado correctamente. " + categories.length +
+      " categorías disponibles.";
+
+  } catch (error) {
+    console.error(error);
+    statusBox.textContent =
+      "No se pudo conectar. Revisa la URL, la clave y los permisos de lectura de Supabase.";
+  }
+}
+
+searchBox.addEventListener("input", filterCategories);
+
+loadData();
+</script>
 </body>
 </html>
