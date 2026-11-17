@@ -25,15 +25,9 @@ header {
   text-align: center;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 30px;
-}
+header h1 { margin: 0; font-size: 30px; }
 
-header p {
-  margin-bottom: 0;
-  color: #dce8f2;
-}
+header p { margin-bottom: 0; color: #dce8f2; }
 
 main {
   max-width: 850px;
@@ -61,8 +55,6 @@ button {
   font-size: 15px;
   cursor: pointer;
 }
-
-button:active { opacity: .8; }
 
 .categories {
   display: grid;
@@ -136,7 +128,7 @@ footer {
   <h2>Categorías</h2>
 
   <div id="categoryBox" class="categories">
-    <p>Cargando categorías...</p>
+    Cargando categorías...
   </div>
 
   <div id="status" class="status">
@@ -178,48 +170,39 @@ let categories = [];
 function element(tag, content, className) {
   const node = document.createElement(tag);
   node.textContent = content;
-  if (className) node.className = className;
+
+  if (className) {
+    node.className = className;
+  }
+
   return node;
 }
 
+// CARGAR CATEGORÍAS
 async function loadCategories() {
+
   categoryBox.replaceChildren(
     element("p", "Cargando categorías...")
   );
 
   const { data, error } = await db
-    .from("Categorias")
-    .select('id, "Categorias", categorias')
+    .from("categorias")
+    .select("id, nombre")
     .order("id");
 
   if (error) {
     categoryBox.replaceChildren();
+
     statusBox.textContent =
       "Error al cargar categorías: " + error.message;
+
     return;
   }
 
-  const unique = new Map();
-
-  data.forEach(row => {
-    const name = row.categorias || row.Categorias;
-
-    if (name) {
-      const normalized = String(name).trim();
-
-      if (normalized) {
-        unique.set(normalized.toLowerCase(), {
-          id: row.id,
-          name: normalized
-        });
-      }
-    }
-  });
-
-  categories = [...unique.values()];
+  categories = data || [];
   categoryBox.replaceChildren();
 
-  if (!categories.length) {
+  if (categories.length === 0) {
     categoryBox.append(
       element("p", "No hay categorías registradas.")
     );
@@ -227,18 +210,22 @@ async function loadCategories() {
   }
 
   categories.forEach(cat => {
+
     const button = element(
       "button",
-      "♫ " + cat.name,
+      "♫ " + cat.nombre,
       "category"
     );
 
     button.onclick = () => {
+
       selectedCategory = cat;
+
       document.querySelectorAll(".category")
         .forEach(b => b.classList.remove("selected"));
 
       button.classList.add("selected");
+
       loadSongs();
     };
 
@@ -249,7 +236,9 @@ async function loadCategories() {
     categories.length + " categorías disponibles.";
 }
 
+// CARGAR CANTOS
 async function loadSongs() {
+
   songsBox.replaceChildren(
     element("p", "Buscando cantos...")
   );
@@ -260,8 +249,12 @@ async function loadSongs() {
     .eq("publicado", true)
     .order("titulo");
 
+  // RELACIÓN CORRECTA CON CATEGORÍAS
   if (selectedCategory) {
-    query = query.eq("categoria_id", selectedCategory.id);
+    query = query.eq(
+      "categoria_id",
+      selectedCategory.id
+    );
   }
 
   const term = searchBox.value.trim();
@@ -279,7 +272,10 @@ async function loadSongs() {
 
   if (error) {
     songsBox.append(
-      element("p", "Error al cargar cantos: " + error.message)
+      element(
+        "p",
+        "Error al cargar cantos: " + error.message
+      )
     );
     return;
   }
@@ -292,6 +288,7 @@ async function loadSongs() {
   }
 
   data.forEach(song => {
+
     const card = document.createElement("article");
     card.className = "song";
 
@@ -300,41 +297,52 @@ async function loadSongs() {
     );
 
     if (song.tono) {
-      card.append(element("p", "Tono: " + song.tono));
+      card.append(
+        element("p", "Tono: " + song.tono)
+      );
     }
 
     if (song.autor) {
-      card.append(element("p", "Autor: " + song.autor));
+      card.append(
+        element("p", "Autor: " + song.autor)
+      );
     }
 
     card.append(
       element("div", song.letra || "", "lyrics")
     );
 
+    if (song.cifrado) {
+      card.append(
+        element("div", song.cifrado, "lyrics")
+      );
+    }
+
     songsBox.append(card);
   });
 }
 
+// BUSCADOR
 searchBox.addEventListener("input", () => {
   loadSongs();
 });
 
+// INICIAR APLICACIÓN
 async function start() {
+
   try {
-    if (
-      SUPABASE_KEY === "PEGA_AQUI_TU_CLAVE_PUBLISHABLE"
-    ) {
-      statusBox.textContent =
-        "Falta colocar la clave Publishable de Supabase.";
-      categoryBox.replaceChildren();
-      return;
+
+    if (!window.supabase) {
+      throw new Error("No se pudo cargar Supabase.");
     }
 
     await loadCategories();
 
   } catch (error) {
+
     statusBox.textContent =
       "Error de conexión: " + error.message;
+
   }
 }
 
@@ -342,5 +350,4 @@ start();
 </script>
 
 </body>
-  </html>
-  
+</html>
