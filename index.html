@@ -261,7 +261,7 @@ async function loadSongs() {
     .order("titulo");
 
   if (selectedCategory) {
-    query = query.eq("categoria", selectedCategory.name);
+    query = query.eq("categoria_id", selectedCategory.id);
   }
 
   const term = searchBox.value.trim();
