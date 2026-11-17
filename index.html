@@ -253,7 +253,7 @@ async function loadData() {
     statusBox.textContent = "Cargando categorías y cantos...";
 
     const [catResult, songResult] = await Promise.all([
-      db.from("Categorias").select("id,categoria").order("id"),
+      db.from("Categorias").select("id,nombre").order("id"),
       db.from("cantos")
         .select("id,titulo,letra,categoria,autor,tiempo_liturgico,tono,cifrado,publicado")
         .order("id")
