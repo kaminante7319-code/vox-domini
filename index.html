@@ -282,5 +282,18 @@ searchBox.addEventListener("input", filterCategories);
 
 loadData();
 </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const SUPABASE_URL = "https://ndwfbmmhffhwrlnzhzip.supabase.co";
+const SUPABASE_KEY = "sb_publishable_LoA4FVqzyNvqUo2JkXo63A_xuWomF6k";
+
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+console.log("Vox Domini: conexión Supabase inicializada");
+</script>
 </body>
 </html>
